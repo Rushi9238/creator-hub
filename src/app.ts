@@ -34,12 +34,16 @@ import { authRouter } from "./routes/auth/auth.route";
 import { API_PREFIX } from "./constant";
 import { errorHandler } from "./middlewares/error.middleware";
 import { creatorRouter } from "./routes/creator-management/creator.routes";
+import { activityLogsRoute } from "./routes/activityLogs/activityLogs.route";
 
 // Using Routes
 app.use(`${API_PREFIX}/auth`, authRouter);
 
 // creators management 
 app.use(`${API_PREFIX}/creators`,creatorRouter)
+
+// Activity Logs routes
+app.use(`${API_PREFIX}/activity-logs`,activityLogsRoute)
 
 const frontendPath = path.join(process.cwd(), "frontend/dist");
 

@@ -3,17 +3,17 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import CreatorCard from './CreatorCard';
 import { Search, Filter, Grid, List, ChevronLeft, ChevronRight } from 'lucide-react';
-import { setSelectedCreator } from '../store/slices/creatorsSlice';
+import { setSelectedCreator,setCreators } from '../store/slices/creatorsSlice';
 import { fetchCreatorList } from '../store/thunks/creatorThunk';
-
 export default function CreatorList() {
   const dispatch = useDispatch();
   const { creators, loading, error } = useSelector((state) => state.creators);
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('grid');
   const [localLoading, setLocalLoading] = useState(false);
+  const [sortsBy, setSortBy] = useState('');
 
   const selectedCategory = useMemo(() => {
     return searchParams.get('category') || 'all';
@@ -25,23 +25,6 @@ export default function CreatorList() {
 
   // Fetch creators filters
   useEffect(() => {
-    const fetchData = async () => {
-      setLocalLoading(true);
-      const params = {
-        page: currentPage,
-        limit: 9,
-        ...(searchTerm && { search: searchTerm }),
-        ...(selectedCategory !== 'all' && { category: selectedCategory })
-      };
-
-      try {
-        await dispatch(fetchCreatorList(params));
-      } catch (error) {
-        console.error('Failed to fetch creators:', error);
-      } finally {
-        setLocalLoading(false);
-      }
-    };
     const timeoutId = setTimeout(() => {
       fetchData();
     }, 500);
@@ -50,6 +33,39 @@ export default function CreatorList() {
       clearTimeout(timeoutId);
     };
   }, [dispatch, searchTerm, selectedCategory, currentPage]);
+
+  useEffect(() => {
+    if (sortsBy === 'asd') {
+      console.log('creators', creators);
+      const filterData = [...creators].sort((a, b) => a.followerCount - b.followerCount);
+      console.log('filterData', filterData);
+      dispatch(setCreators(filterData));
+    } else if (sortsBy === 'dse') {
+      const filterData = [...creators].sort((a, b) => b.followerCount - a.followerCount);
+      console.log('filterData', filterData);
+      dispatch(setCreators(filterData));
+    } else {
+      fetchData();
+    }
+  }, [sortsBy]);
+
+  const fetchData = async () => {
+    setLocalLoading(true);
+    const params = {
+      page: currentPage,
+      limit: 9,
+      ...(searchTerm && { search: searchTerm }),
+      ...(selectedCategory !== 'all' && { category: selectedCategory }),
+    };
+
+    try {
+      await dispatch(fetchCreatorList(params));
+    } catch (error) {
+      console.error('Failed to fetch creators:', error);
+    } finally {
+      setLocalLoading(false);
+    }
+  };
 
   const handleCategoryChange = (category) => {
     const newSearchParams = new URLSearchParams(searchParams);
@@ -78,7 +94,7 @@ export default function CreatorList() {
     currentPage,
     totalPages: Math.ceil(creators.length / 9),
     hasNext: currentPage < Math.ceil(creators.length / 9),
-    hasPrev: currentPage > 1
+    hasPrev: currentPage > 1,
   };
 
   return (
@@ -127,6 +143,14 @@ export default function CreatorList() {
             </div>
           )}
         </div>
+        <div>
+          <span>Sort By: </span>
+          <select onChange={(e) => setSortBy(e.target.value)} className="border p-2">
+            <option value="">select sort by</option>
+            <option value="asd">Asending</option>
+            <option value="dse">Desending</option>
+          </select>
+        </div>
 
         {/* Category Filter */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -173,10 +197,12 @@ export default function CreatorList() {
             No creators found. Try adjusting your filters or search term.
           </p>
         </div>
-      ) : !localLoading && !loading && (
-        <>
-          {/* Grid/List View */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      ) : (
+        !localLoading &&
+        !loading && (
+          <>
+            {/* Grid/List View */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {creators.map((creator) => (
                 <CreatorCard
                   key={creator.id || creator._id}
@@ -186,39 +212,40 @@ export default function CreatorList() {
               ))}
             </div>
 
-          {/* Pagination */}
-          {paginationInfo.totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-8">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={!paginationInfo.hasPrev || localLoading}
-                className={`p-2 rounded-lg border border-gray-300 dark:border-gray-600 ${
-                  !paginationInfo.hasPrev || localLoading
-                    ? 'opacity-50 cursor-not-allowed text-gray-400'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
+            {/* Pagination */}
+            {paginationInfo.totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-8">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={!paginationInfo.hasPrev || localLoading}
+                  className={`p-2 rounded-lg border border-gray-300 dark:border-gray-600 ${
+                    !paginationInfo.hasPrev || localLoading
+                      ? 'opacity-50 cursor-not-allowed text-gray-400'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
 
-              <span className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
-                Page {currentPage} of {paginationInfo.totalPages}
-              </span>
+                <span className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
+                  Page {currentPage} of {paginationInfo.totalPages}
+                </span>
 
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={!paginationInfo.hasNext || localLoading}
-                className={`p-2 rounded-lg border border-gray-300 dark:border-gray-600 ${
-                  !paginationInfo.hasNext || localLoading
-                    ? 'opacity-50 cursor-not-allowed text-gray-400'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          )}
-        </>
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={!paginationInfo.hasNext || localLoading}
+                  className={`p-2 rounded-lg border border-gray-300 dark:border-gray-600 ${
+                    !paginationInfo.hasNext || localLoading
+                      ? 'opacity-50 cursor-not-allowed text-gray-400'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+          </>
+        )
       )}
     </div>
   );

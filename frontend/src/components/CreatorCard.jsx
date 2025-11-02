@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart, Users, Award } from 'lucide-react';
+import { Heart, Users, Award, Clock } from 'lucide-react';
 
 export default function CreatorCard({ creator, onViewDetails }) {
   return (
@@ -41,15 +41,25 @@ export default function CreatorCard({ creator, onViewDetails }) {
               </Link>
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{creator.title}</p>
-            <span className="inline-block mt-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
-              {creator.category}
-            </span>
+           <div className="flex items-center gap-2 mt-2">
+              <span className="inline-block px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+                {creator.category}
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                <Clock className="w-3 h-3" />
+                {new Date(creator.createdAt).toLocaleDateString()}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Bio */}
         <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-4">
           {creator.bio}
+        </p>
+        {/* Created By */}  
+        <p className="text-xs text-gray-500 dark:text-gray-500 mb-4 font-medium">
+          Created by: <span className="text-gray-700 dark:text-gray-300 capitalize">{creator.createdBy?.name}</span>
         </p>
 
         {/* Stats */}

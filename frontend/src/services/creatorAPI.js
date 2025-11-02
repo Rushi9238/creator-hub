@@ -25,4 +25,12 @@ export const creatorAPI = {
     const response = await api.delete(`/creators/${id}`);
     return response.data;
   },
+  getCategoryLists:async()=>{
+    const response= await api.get(`/creators/cat-list`);
+    return response.data
+  },
+  getActivityLogs:async()=>{
+    const response= await api.get('/activity-logs');
+    return response.data;
+  }
 };

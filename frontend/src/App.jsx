@@ -45,14 +45,14 @@ const AppRoute = () => {
               </PublicRoute>
             }
           />
-          {/* <Route
+          <Route
             path="/signup"
             element={
               <PublicRoute>
                 <Signup />
               </PublicRoute>
             }
-          /> */}
+          />
 
           {/* Protected routes wrapped with Layout */}
           <Route

@@ -11,7 +11,7 @@ import {
   Star,
   ArrowLeft,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { toggleFeatured } from '../store/slices/creatorsSlice';
 import { deleteCreatorFun, fetchCreatorById } from '../store/thunks/creatorThunk';
 
@@ -22,9 +22,7 @@ export default function CreatorProfile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [creator, setCreator] = useState(null);
 
-  // const creator = useSelector((state) =>
-  //   state.creators.creators.find((c) => c._id === id)
-  // );
+  const user = useSelector((state) => state.auth.user);
 
   useEffect(() => {
     if (id) {
@@ -55,12 +53,22 @@ export default function CreatorProfile() {
 
   const handleDelete = async () => {
     try {
-       await dispatch(deleteCreatorFun(id));
+      await dispatch(deleteCreatorFun(id));
       navigate('/dashboard');
-      
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const checkAuthority = (node) => {
+    if(!user && !creator) return false;
+    const role = user?.role || '';
+    const userMail=user?.email||""
+    if(role==="admin" || userMail===creator.createdBy?.email){
+      return node;
+    }
+    return null;
+
   };
 
   return (
@@ -96,20 +104,24 @@ export default function CreatorProfile() {
 
         {/* Actions Overlay */}
         <div className="absolute top-4 left-4 flex gap-2">
-          <Link
+          {checkAuthority( <Link
             to={`/edit/${creator._id}`}
             className="p-3 bg-white dark:bg-gray-800 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-md"
             title="Edit creator"
           >
             <Edit className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-          </Link>
-          <button
+          </Link>)}
+         
+         {
+          checkAuthority(<button
             onClick={() => setShowDeleteConfirm(true)}
             className="p-3 bg-white dark:bg-gray-800 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shadow-md"
             title="Delete creator"
           >
             <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
-          </button>
+          </button>)
+         }
+          
         </div>
       </div>
 

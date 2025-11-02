@@ -5,14 +5,22 @@ import {
   setError, 
   addCreator, 
   updateCreator,
-  setSelectedCreator 
+  setSelectedCreator, 
+  setActivtyLogs
 } from '../slices/creatorsSlice';
 
-// Toast notification utility (you can use any toast library)
-const showToast = (message, type = 'success') => {
-  // Implement your toast notification here
-  console[type === 'error' ? 'error' : 'log'](message);
-};
+export const fetchActivityLogs=()=>async(dispatch)=>{
+  try {
+    const response= await creatorAPI.getActivityLogs();
+    if(response.success){
+      dispatch(setActivtyLogs(response.data.logs));
+      return response.data.logs;
+    }
+  } catch (error) {
+     const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch activity logs';
+        dispatch(setError(errorMessage));
+  }
+}
 
 export const fetchCreatorList = (params = {}) => async (dispatch) => {
   try {
@@ -23,7 +31,6 @@ export const fetchCreatorList = (params = {}) => async (dispatch) => {
     
     if (response.success) {
       dispatch(setCreators(response.data.creators));
-      // You might want to store pagination info in state as well
       return response.data;
     } else {
       throw new Error(response.message || 'Failed to fetch creators');
@@ -31,7 +38,6 @@ export const fetchCreatorList = (params = {}) => async (dispatch) => {
   } catch (error) {
     const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch creators';
     dispatch(setError(errorMessage));
-    showToast(errorMessage, 'error');
     throw error;
   } finally {
     dispatch(setLoading(false));
@@ -52,7 +58,6 @@ export const fetchCreatorById = (id) => async (dispatch) => {
   } catch (error) {
     const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch creator';
     dispatch(setError(errorMessage));
-    showToast(errorMessage, 'error');
     throw error;
   } finally {
     dispatch(setLoading(false));
@@ -66,7 +71,7 @@ export const createCreator = (creatorData) => async (dispatch) => {
     
     if (response.success) {
       dispatch(addCreator(response.data));
-      showToast('Creator created successfully!');
+      dispatch(fetchActivityLogs())
       return response.data;
     } else {
       throw new Error(response.message || 'Failed to create creator');
@@ -74,7 +79,6 @@ export const createCreator = (creatorData) => async (dispatch) => {
   } catch (error) {
     const errorMessage = error.response?.data?.message || error.message || 'Failed to create creator';
     dispatch(setError(errorMessage));
-    showToast(errorMessage, 'error');
     throw error;
   } finally {
     dispatch(setLoading(false));
@@ -88,7 +92,7 @@ export const updateCreatorFun = (creatorId, updates) => async (dispatch) => {
     
     if (response.success) {
       dispatch(updateCreator(response.data));
-      showToast('Creator updated successfully!');
+      dispatch(fetchActivityLogs())
       return response.data;
     } else {
       throw new Error(response.message || 'Failed to update creator');
@@ -96,7 +100,6 @@ export const updateCreatorFun = (creatorId, updates) => async (dispatch) => {
   } catch (error) {
     const errorMessage = error.response?.data?.message || error.message || 'Failed to update creator';
     dispatch(setError(errorMessage));
-    showToast(errorMessage, 'error');
     throw error;
   } finally {
     dispatch(setLoading(false));
@@ -109,8 +112,7 @@ export const deleteCreatorFun = (creatorId) => async (dispatch) => {
     const response = await creatorAPI.deleteCreator(creatorId);
     
     if (response.success) {
-      // You'll need to add deleteCreator reducer
-      showToast('Creator deleted successfully!');
+      dispatch(fetchActivityLogs())
       return response.data;
     } else {
       throw new Error(response.message || 'Failed to delete creator');
@@ -118,9 +120,25 @@ export const deleteCreatorFun = (creatorId) => async (dispatch) => {
   } catch (error) {
     const errorMessage = error.response?.data?.message || error.message || 'Failed to delete creator';
     dispatch(setError(errorMessage));
-    showToast(errorMessage, 'error');
     throw error;
   } finally {
     dispatch(setLoading(false));
   }
 };
+
+export const fetchCategoryLists= ()=>async(dispatch)=>{
+    try {
+        const response= creatorAPI.getCategoryLists()
+        if (response.success) {
+      return response.data;
+    } else {
+      throw new Error(response.message || 'Failed to delete creator');
+    }
+    } catch (error) {
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to delete creator';
+        dispatch(setError(errorMessage));
+    throw error;
+    }
+}
+
+

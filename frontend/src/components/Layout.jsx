@@ -1,17 +1,25 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Plus, LogOut } from 'lucide-react';
-import { useState } from 'react';
+import { Menu, X, Plus, LogOut, Clock } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { useDispatch } from 'react-redux';
 import { logoutUser } from '../store/thunks/authThunks';
+import ActivityLog from './ActivityLog';
+import { fetchActivityLogs } from '../store/thunks/creatorThunk';
 
 export default function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activityLogOpen, setActivityLogOpen] = useState(false);
+
   const dispatch= useDispatch()
   const location = useLocation();
   const navigate = useNavigate();
 
   const isActive = (path) => location.pathname === path;
+
+  useEffect(()=>{
+    dispatch(fetchActivityLogs())
+  },[])
 
   // Logout handler
   const handleLogout = async() => {
@@ -23,6 +31,10 @@ export default function Layout() {
     // Redirect to login
     navigate('/login');
   };
+
+  const handleActivtyLogClose=()=>{
+    setActivityLogOpen(false)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -58,6 +70,15 @@ export default function Layout() {
 
             {/* Create + Logout + Mobile Menu */}
             <div className="flex items-center gap-3">
+             
+             <button
+                onClick={() => setActivityLogOpen(true)}
+                className="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                title="Activity Log"
+              >
+                <Clock className="w-5 h-5" />
+              </button>
+
               <Link
                 to="/create"
                 className="inline-flex items-center gap-2 px-4 py-2  bg-blue-600 text-white rounded-lg font-medium hover:shadow-lg hover:bg-blue-700 transition-all duration-200 text-sm md:text-base"
@@ -145,6 +166,7 @@ export default function Layout() {
           </div>
         </div>
       </footer>
+      <ActivityLog open={activityLogOpen} onOpenChange={handleActivtyLogClose} />
     </div>
   );
 }

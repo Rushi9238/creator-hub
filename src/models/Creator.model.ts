@@ -20,6 +20,7 @@ export interface ICreator extends Document {
   socialLinks: ISocialLinks;
   skills: string[];
   featured: boolean;
+  createdBy: mongoose.Types.ObjectId; 
   createdAt: Date;
   updatedAt: Date;
 }
@@ -89,6 +90,11 @@ const creatorSchema = new Schema({
   featured: { 
     type: Boolean, 
     default: false 
+  },
+  createdBy: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: [true, 'Created by user is required'] 
   }
 }, {
   timestamps: true

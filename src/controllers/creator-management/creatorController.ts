@@ -3,12 +3,16 @@ import Creator, { ICreator } from '../../models/Creator.model';
 import { asyncHandler } from '../../utils/asyncHandler';
 import { isValidURL } from '../../utils/checkValidURL';
 import { isValidEmail } from '../../utils/checkEmailValidation';
+import { logCreatorCreation, logCreatorDeletion, logCreatorUpdate } from '../../services/activityLog.service';
 
 interface QueryParams {
   page?: string;
   limit?: string;
   search?: string;
   category?: string;
+}
+interface AuthRequest extends Request {
+  user?: any;
 }
 
 export const getCreators = asyncHandler(
@@ -34,7 +38,7 @@ export const getCreators = asyncHandler(
       filter.category = { $regex: category, $options: 'i' };
     }
 
-    const creators = await Creator.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit);
+    const creators = await Creator.find(filter).populate('createdBy', 'name email').sort({ createdAt: -1 }).skip(skip).limit(limit);
 
     const total = await Creator.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
@@ -58,7 +62,7 @@ export const getCreators = asyncHandler(
   },
 );
 
-export const createCreator = asyncHandler(async (req: Request, res: Response) => {
+export const createCreator = asyncHandler(async (req: AuthRequest, res: Response) => {
   const creatorData: Partial<ICreator> = await req.body;
 
   // Check if required fields are provided
@@ -112,7 +116,7 @@ export const createCreator = asyncHandler(async (req: Request, res: Response) =>
         .status(400)
         .json({ success: false, message: 'Skills must be a valid JSON array', data: null });
     }
-  } 
+  }
 
   // Validate followerCount and workCount are non-negative integers
   if (creatorData.followerCount && creatorData.followerCount < 0) {
@@ -126,8 +130,20 @@ export const createCreator = asyncHandler(async (req: Request, res: Response) =>
       .json({ success: false, message: 'Work count cannot be negative', data: null });
   }
 
+  if (!req.user || !req.user._id) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required',
+      data: null,
+    });
+  }
+  creatorData.createdBy = req.user._id;
+
   const creator = new Creator(creatorData);
   await creator.save();
+
+  // Log activity
+  await logCreatorCreation(creator, req.user);
 
   res.status(201).json({
     success: true,
@@ -140,7 +156,7 @@ export const getCreatorByID = asyncHandler(async (req: Request, res: Response) =
   const creatorId = req.params.id;
 
   // Check if creator exists
-  const creator = await Creator.findById(creatorId);
+  const creator = await Creator.findById(creatorId).populate('createdBy', 'name email');
   if (!creator) {
     return res.status(404).json({
       success: false,
@@ -157,7 +173,7 @@ export const getCreatorByID = asyncHandler(async (req: Request, res: Response) =
   });
 });
 
-export const updateCreator = asyncHandler(async (req: Request, res: Response) => {
+export const updateCreator = asyncHandler(async (req: AuthRequest, res: Response) => {
   const creatorId = req.params.id;
 
   // Check if creator exists
@@ -202,7 +218,7 @@ export const updateCreator = asyncHandler(async (req: Request, res: Response) =>
     }
   }
 
-   // Check if skills (if provided) are an array of strings
+  // Check if skills (if provided) are an array of strings
   if (creatorData.skills && typeof creatorData.skills === 'string') {
     try {
       const parsedSkills: string[] = JSON.parse(creatorData.skills); // Explicitly define type as string[]
@@ -239,10 +255,13 @@ export const updateCreator = asyncHandler(async (req: Request, res: Response) =>
   }
 
   // Update the creator document with the new data
-  Object.assign(creator, creatorData); // This applies only the fields provided
+  Object.assign(creator, creatorData);
 
   // Save the updated creator
-  await creator.save();
+  const updatedCreator = await creator.save();
+
+  // Log activity 
+  await logCreatorUpdate(creatorId, creatorData, updatedCreator, req.user); 
 
   res.status(200).json({
     success: true,
@@ -251,7 +270,7 @@ export const updateCreator = asyncHandler(async (req: Request, res: Response) =>
   });
 });
 
-export const deleteCreator = asyncHandler(async (req: Request, res: Response) => {
+export const deleteCreator = asyncHandler(async (req: AuthRequest, res: Response) => {
   const creatorId = req.params.id;
 
   // Use findOneAndDelete to find the creator and delete it in one operation
@@ -265,9 +284,21 @@ export const deleteCreator = asyncHandler(async (req: Request, res: Response) =>
     });
   }
 
+  // Log activity
+    await logCreatorDeletion(creator, req.user);
+
   res.status(200).json({
     success: true,
     message: 'Creator deleted successfully',
     data: null,
+  });
+});
+
+export const getAllCategoryList = asyncHandler(async (req: Request, res: Response) => {
+  const categories = await Creator.distinct('category');
+  return res.status(200).json({
+    success: true,
+    message: 'Creator list fetched successfully',
+    data: categories,
   });
 });

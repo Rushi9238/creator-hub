@@ -6,6 +6,8 @@ const initialState = {
   selectedCreator: null,
   loading: false,
   error: null,
+  activityLogs:[],
+  loadingActivityLogs:false
 };
 
 const creatorsSlice = createSlice({
@@ -52,9 +54,15 @@ const creatorsSlice = createSlice({
     setError: (state, action) => {
       state.error = action.payload;
     },
+    setActivtyLogs:(state,action)=>{
+      state.activityLogs=action.payload
+    },
+    setLoadingActivityLogs:(state,action)=>{
+      state.loadingActivityLogs=action.payload
+    }
   },
 });
 
-export const { setCreators, setSelectedCreator, addCreator, updateCreator, deleteCreator, toggleFeatured,setLoading,setError } =
+export const { setCreators, setSelectedCreator, addCreator, updateCreator, deleteCreator, toggleFeatured,setLoading,setError,setActivtyLogs,setLoadingActivityLogs } =
   creatorsSlice.actions;
 export default creatorsSlice.reducer;
